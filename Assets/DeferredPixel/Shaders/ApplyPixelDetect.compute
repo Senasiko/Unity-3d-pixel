@@ -1,0 +1,35 @@
+#pragma kernel ApplyMain
+#pragma enable_d3d11_debug_symbols
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/UnityGBuffer.hlsl"
+
+#define ThreadSizeX 8
+#define ThreadSizeY 8
+
+TEXTURE2D_X(_PixelTexture);
+TEXTURE2D_X(_CameraDepthAttachment);
+TEXTURE2D_X(_GBuffer0);
+TEXTURE2D_X(_GBuffer1);
+TEXTURE2D_X(_GBuffer2);
+TEXTURE2D_X(_CameraColorAttachmentA);
+
+RW_TEXTURE2D(float4, _CopyDepthTexture);
+RW_TEXTURE2D(float4, _CopyGBuffer0);
+RW_TEXTURE2D(float4, _CopyGBuffer1);
+RW_TEXTURE2D(float4, _CopyGBuffer2);
+RW_TEXTURE2D(float4, _CopyGBuffer3);
+
+[numthreads(ThreadSizeX, ThreadSizeY, 1)]
+void ApplyMain(uint3 id : SV_DispatchThreadID)
+{
+    float2 uv = _PixelTexture[id.xy];
+    uint2 coordinate = uv * _ScreenSize;
+
+    _CopyDepthTexture[id.xy] = _CameraDepthAttachment[coordinate];
+    _CopyGBuffer0[id.xy] = _GBuffer0[coordinate];
+    _CopyGBuffer1[id.xy] = _GBuffer1[coordinate];
+    _CopyGBuffer2[id.xy] = _GBuffer2[coordinate];
+    _CopyGBuffer3[id.xy] = float4(linear_to_sRGB(_CameraColorAttachmentA[coordinate].xyz), _CameraColorAttachmentA[coordinate].w);
+}
+     
